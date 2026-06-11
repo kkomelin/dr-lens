@@ -1,19 +1,15 @@
 // DR Lens — background service worker (Manifest V3)
 // Fetches Ahrefs free Domain Rating and draws it into the toolbar icon, per tab.
 
-const API = "https://api.ahrefs.com/v3/public/domain-rating-free";
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24h — DR changes slowly
-const ERROR_TTL = 10 * 60 * 1000;      // retry failed lookups after 10 min
-const inFlight = new Map();            // domain -> Promise
+import { colorFor, domainFromUrl } from "./common.js";
 
-// ---------- Color scale ----------
-function colorFor(dr) {
-  if (dr >= 80) return "#7c5cff"; // elite — purple
-  if (dr >= 60) return "#1fa971"; // strong — green
-  if (dr >= 40) return "#2f8fd6"; // decent — blue
-  if (dr >= 20) return "#e08a2e"; // building — orange
-  return "#8a8f9c";               // low — gray
-}
+const API = "https://api.ahrefs.com/v3/public/domain-rating-free";
+const CACHE_TTL = 24 * 60 * 60 * 1000;   // 24h — DR changes slowly
+const ERROR_TTL = 10 * 60 * 1000;        // retry failed lookups after 10 min
+const NETWORK_ERROR_TTL = 30 * 1000;     // offline blips recover fast
+const FETCH_TIMEOUT = 10 * 1000;
+const inFlight = new Map();              // domain -> Promise
+const lastHandled = new Map();           // tabId -> last URL we updated for
 
 // ---------- Icon drawing ----------
 function drawIcon(text, bg) {
@@ -58,25 +54,18 @@ function setIdle(tabId, title) {
   setIcon(tabId, "·", "#262a36", title || "DR Lens — no domain here");
 }
 
-// ---------- Domain helpers ----------
-function domainFromUrl(url) {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
-    return u.hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
+// ---------- Cache ----------
+function ttlFor(entry) {
+  if (!entry.error) return CACHE_TTL;
+  return entry.error === "network" ? NETWORK_ERROR_TTL : ERROR_TTL;
 }
 
-// ---------- Cache ----------
 async function cacheGet(domain) {
   const key = "dr:" + domain;
   const obj = await chrome.storage.local.get(key);
   const entry = obj[key];
   if (!entry) return null;
-  const ttl = entry.error ? ERROR_TTL : CACHE_TTL;
-  if (Date.now() - entry.t > ttl) return null;
+  if (Date.now() - entry.t > ttlFor(entry)) return null;
   return entry;
 }
 
@@ -84,17 +73,34 @@ async function cacheSet(domain, entry) {
   await chrome.storage.local.set({ ["dr:" + domain]: { ...entry, t: Date.now() } });
 }
 
-// ---------- Fetch ----------
-async function fetchDR(domain) {
-  const cached = await cacheGet(domain);
-  if (cached) return cached;
+// Drop expired dr:* entries so storage doesn't grow without bound.
+async function cleanupCache() {
+  const all = await chrome.storage.local.get(null);
+  const now = Date.now();
+  const stale = Object.keys(all).filter((k) => {
+    if (!k.startsWith("dr:")) return false;
+    const entry = all[k];
+    return !entry || typeof entry.t !== "number" || now - entry.t > ttlFor(entry);
+  });
+  if (stale.length) await chrome.storage.local.remove(stale);
+}
 
-  if (inFlight.has(domain)) return inFlight.get(domain);
+// ---------- Fetch ----------
+// force=true skips both the cache and any in-flight request, so the popup's
+// Refresh button always hits the network instead of reusing a stale promise.
+async function fetchDR(domain, force = false) {
+  if (!force) {
+    const cached = await cacheGet(domain);
+    if (cached) return cached;
+
+    if (inFlight.has(domain)) return inFlight.get(domain);
+  }
 
   const p = (async () => {
     try {
       const res = await fetch(`${API}?target=${encodeURIComponent(domain)}&output=json`, {
         headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT),
       });
       if (res.status === 429) {
         const entry = { error: "rate_limited" };
@@ -121,7 +127,8 @@ async function fetchDR(domain) {
       await cacheSet(domain, entry);
       return entry;
     } finally {
-      inFlight.delete(domain);
+      // A forced fetch may have replaced our entry; only remove our own.
+      if (inFlight.get(domain) === p) inFlight.delete(domain);
     }
   })();
 
@@ -142,6 +149,15 @@ async function updateTab(tabId, url) {
   if (!cached) setIcon(tabId, "…", "#262a36", `DR Lens — checking ${domain}`);
 
   const entry = await fetchDR(domain);
+
+  // The tab may have navigated elsewhere while we were fetching; don't
+  // overwrite the icon with a rating for the previous domain.
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    if (domainFromUrl(tab.url) !== domain) return;
+  } catch {
+    return; // tab gone
+  }
 
   if (entry.error) {
     if (entry.error === "rate_limited") {
@@ -168,11 +184,21 @@ async function refreshActiveTab(tabId) {
 chrome.tabs.onActivated.addListener(({ tabId }) => refreshActiveTab(tabId));
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Only the visible tab: background tabs (session restore, middle-clicked
+  // links) would burn the anonymous API rate limit. They get their icon via
+  // onActivated when the user switches to them.
+  if (!tab.active) return;
   // update on navigation start (url change) and on load complete
   if (changeInfo.url || changeInfo.status === "complete") {
-    updateTab(tabId, changeInfo.url || tab.url);
+    const url = changeInfo.url || tab.url;
+    // skip the duplicate "complete" pass when the URL hasn't changed
+    if (changeInfo.status === "complete" && lastHandled.get(tabId) === url) return;
+    lastHandled.set(tabId, url);
+    updateTab(tabId, url);
   }
 });
+
+chrome.tabs.onRemoved.addListener((tabId) => lastHandled.delete(tabId));
 
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) return;
@@ -182,6 +208,7 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
 
 // Popup asks for current data / force refresh
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type !== "getDR" && msg?.type !== "refreshDR") return false;
   (async () => {
     if (msg.type === "getDR") {
       const domain = domainFromUrl(msg.url);
@@ -192,7 +219,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const domain = domainFromUrl(msg.url);
       if (!domain) return sendResponse({ domain: null });
       await chrome.storage.local.remove("dr:" + domain);
-      const entry = await fetchDR(domain);
+      const entry = await fetchDR(domain, true);
       if (msg.tabId) updateTab(msg.tabId, msg.url);
       sendResponse({ domain, ...entry });
     }
@@ -200,8 +227,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true; // async response
 });
 
+// Expired cache entries are skipped on read but still take up storage;
+// sweep them once a day.
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "cache-cleanup") cleanupCache();
+});
+
 // Initialize icon for the active tab on startup / install
 async function init() {
+  chrome.alarms.create("cache-cleanup", { periodInMinutes: 24 * 60 });
+  cleanupCache();
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab) updateTab(tab.id, tab.url);
 }

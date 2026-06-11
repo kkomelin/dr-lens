@@ -1,18 +1,4 @@
-function colorFor(dr) {
-  if (dr >= 80) return "#7c5cff";
-  if (dr >= 60) return "#1fa971";
-  if (dr >= 40) return "#2f8fd6";
-  if (dr >= 20) return "#e08a2e";
-  return "#8a8f9c";
-}
-
-function tierFor(dr) {
-  if (dr >= 80) return "Elite — top-tier backlink profile";
-  if (dr >= 60) return "Strong — well-established authority";
-  if (dr >= 40) return "Decent — solid and growing";
-  if (dr >= 20) return "Building — early authority";
-  return "Low — just getting started";
-}
+import { colorFor, tierFor } from "./common.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,7 +6,9 @@ function render(res) {
   if (!res || !res.domain) {
     $("domain").textContent = "No domain on this page";
     $("score").textContent = "·";
+    $("score").style.color = "";
     $("tier").textContent = "";
+    $("fill").style.width = "0";
     return;
   }
   $("domain").textContent = res.domain;
@@ -47,12 +35,21 @@ async function load(force) {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
   $("score").textContent = "…";
-  const res = await chrome.runtime.sendMessage({
-    type: force ? "refreshDR" : "getDR",
-    url: tab.url,
-    tabId: tab.id,
-  });
-  render(res);
+  $("score").style.color = "";
+  try {
+    const res = await chrome.runtime.sendMessage({
+      type: force ? "refreshDR" : "getDR",
+      url: tab.url,
+      tabId: tab.id,
+    });
+    render(res);
+  } catch {
+    // service worker unreachable / message channel closed
+    $("score").textContent = "?";
+    $("score").style.color = "#c25555";
+    $("tier").textContent = "Extension error - try reopening the popup";
+    $("fill").style.width = "0";
+  }
 }
 
 $("refresh").addEventListener("click", () => load(true));

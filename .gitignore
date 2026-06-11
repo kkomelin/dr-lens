@@ -1,0 +1,14 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node (no deps today, but just in case)
+node_modules/
+
+# Packaged builds
+*.zip
+*.crx
+*.pem

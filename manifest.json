@@ -3,8 +3,10 @@
   "name": "DR Lens — Domain Rating in your toolbar",
   "version": "1.0.0",
   "description": "Shows the Ahrefs Domain Rating of the site you're on, drawn right into the toolbar icon. Free, no API key.",
+  "minimum_chrome_version": "103",
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_title": "DR Lens",
@@ -22,6 +24,6 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["tabs", "storage"],
+  "permissions": ["tabs", "storage", "alarms"],
   "host_permissions": ["https://api.ahrefs.com/*"]
 }

@@ -7,6 +7,7 @@
   "repository": "github:kkomelin/dr-lens",
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "package": "bash scripts/package.sh"
   }
 }

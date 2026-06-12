@@ -59,6 +59,4 @@ Pre-publish checklist:
      api.ahrefs.com (see PRIVACY.md) and justify the "tabs" permission
      (reads the tab URL to derive the hostname; see README "Permissions").
   3. Listing assets: screenshots (1280x800 or 640x400) and the 128px icon.
-  4. After the listing goes live, replace REPLACE-WITH-LISTING-ID in
-     README.md with the real listing URL.
 CHECKLIST

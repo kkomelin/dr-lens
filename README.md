@@ -3,7 +3,7 @@
 A Chrome extension (Manifest V3) that shows the [Ahrefs](https://ahrefs.com) Domain
 Rating of the site you're on, drawn right into the toolbar icon. Free, no API key.
 
-[![DR Lens drawing the Domain Rating of google.com into the Chrome toolbar icon, with the popup open](store-assets/screenshot-1280x800.png)](https://chromewebstore.google.com/detail/REPLACE-WITH-LISTING-ID)
+[![DR Lens drawing the Domain Rating of google.com into the Chrome toolbar icon, with the popup open](store-assets/screenshot-1280x800.png)](https://chromewebstore.google.com/detail/dr-lens-%E2%80%94-domain-rating-i/babgbadloikchhadbpmcmhokbbcokmao)
 
 ## Features
 
@@ -19,7 +19,7 @@ Rating of the site you're on, drawn right into the toolbar icon. Free, no API ke
 ## Install
 
 Install DR Lens from the
-[Chrome Web Store](https://chromewebstore.google.com/detail/REPLACE-WITH-LISTING-ID)
+[Chrome Web Store](https://chromewebstore.google.com/detail/dr-lens-%E2%80%94-domain-rating-i/babgbadloikchhadbpmcmhokbbcokmao)
 for one-click install and automatic updates. Requires Chrome 103 or newer.
 
 Prefer to read the code you run? You can also install from source - see

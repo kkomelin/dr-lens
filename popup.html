@@ -11,6 +11,7 @@
   }
   * { box-sizing: border-box; margin: 0; }
   body {
+    position: relative;
     width: 240px;
     background: var(--bg);
     color: var(--text);
@@ -24,6 +25,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-right: 24px; /* keep clear of the info icon */
   }
   .score-row {
     display: flex;
@@ -65,9 +67,53 @@
   .credit { font-size: 10px; color: #5a5f6e; }
   .credit a { color: #7b8194; text-decoration: none; }
   .state { margin-top: 10px; color: var(--muted); }
+  .info {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+  }
+  .info-btn {
+    list-style: none;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #3a3f52;
+    background: #2a2e3a;
+    color: var(--text);
+    font: italic 700 11px/1 Georgia, "Times New Roman", serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .info-btn::-webkit-details-marker { display: none; }
+  .info-btn:hover,
+  .info[open] .info-btn { background: #3a3f52; border-color: #4a4f63; }
+  .info[open] .info-btn { position: relative; z-index: 11; } /* stay clickable above the overlay */
+  .info-pop {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    padding: 44px 16px 16px;
+    z-index: 10;
+  }
+  .info-pop p {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .info-pop p + p { margin-top: 8px; }
+  .info-pop strong { color: #c2c6d0; font-weight: normal; }
 </style>
 </head>
 <body>
+  <details class="info">
+    <summary class="info-btn" title="About Domain Rating" aria-label="About Domain Rating">i</summary>
+    <div class="info-pop">
+      <p><strong>Domain Rating</strong> is a 0 to 100 score based on how many sites link to this site, and how strong those sites are.</p>
+      <p>To raise it, <strong>get links from more strong sites by making content worth sharing</strong>.</p>
+    </div>
+  </details>
   <div class="domain" id="domain">—</div>
   <div class="score-row">
     <div class="score" id="score">·</div>

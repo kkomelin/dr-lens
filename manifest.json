@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DR Lens — Domain Rating in your toolbar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shows the Ahrefs Domain Rating of the site you're on, drawn right into the toolbar icon. Free, no API key.",
   "minimum_chrome_version": "103",
   "background": {

@@ -1,6 +1,6 @@
 {
   "name": "dr-lens",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Chrome extension showing the Ahrefs Domain Rating of the current site in the toolbar icon.",
   "license": "Apache-2.0",
   "repository": "github:kkomelin/dr-lens",

@@ -12,6 +12,8 @@ FILES=(
   common.js
   popup.html
   popup.js
+  options.html
+  options.js
   icons/icon16.png
   icons/icon32.png
   icons/icon48.png
@@ -59,4 +61,6 @@ Pre-publish checklist:
      api.ahrefs.com (see PRIVACY.md) and justify the "tabs" permission
      (reads the tab URL to derive the hostname; see README "Permissions").
   3. Listing assets: screenshots (1280x800 or 640x400) and the 128px icon.
+  4. Listing copy: remove any "no API key" wording - since v1.1.0 users
+     must paste their own free Ahrefs API key (Options page).
 CHECKLIST

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DR Lens - Settings</title>
+<style>
+  :root {
+    --bg: #14161d;
+    --panel: #1d2029;
+    --text: #eef0f6;
+    --muted: #8a8f9c;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    width: 360px;
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: 16px;
+  }
+  h1 { font-size: 14px; font-weight: 700; }
+  p, ol { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  ol { padding-left: 18px; }
+  ol li + li { margin-top: 2px; }
+  strong { color: #c2c6d0; font-weight: normal; }
+  a { color: #7b9cff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  label { display: block; margin-top: 14px; font-size: 12px; }
+  .key-row { display: flex; gap: 6px; margin-top: 6px; }
+  input {
+    flex: 1;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid #2c3040;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  input:focus { outline: none; border-color: #3a3f52; }
+  button {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid #2c3040;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  button:hover { border-color: #3a3f52; }
+  .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .status { color: #1fa971; font-size: 12px; }
+  .note { margin-top: 12px; font-size: 11px; color: #5a5f6e; }
+</style>
+</head>
+<body>
+  <h1>Ahrefs API key</h1>
+  <p>Ahrefs now requires a free API key for Domain Rating lookups. Getting one takes a minute:</p>
+  <ol>
+    <li>Sign in or create a free account at <a href="https://ahrefs.com" target="_blank" rel="noopener noreferrer">ahrefs.com</a>.</li>
+    <li>Generate a key in <a href="https://app.ahrefs.com/account/api-keys" target="_blank" rel="noopener noreferrer">Account settings &rarr; API keys</a>.</li>
+    <li>Paste it below and save.</li>
+  </ol>
+  <label for="key">API key</label>
+  <div class="key-row">
+    <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your Ahrefs API key">
+    <button id="toggle" type="button">Show</button>
+  </div>
+  <div class="row">
+    <button id="save" type="button">Save</button>
+    <span class="status" id="status" role="status"></span>
+  </div>
+  <p class="note">The key is stored only on this device (chrome.storage.local) and sent only to api.ahrefs.com with lookup requests.</p>
+  <script src="options.js" type="module"></script>
+</body>
+</html>

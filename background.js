@@ -98,10 +98,18 @@ async function fetchDR(domain, force = false) {
 
   const p = (async () => {
     try {
+      const { apiKey } = await chrome.storage.local.get("apiKey");
+      // Not cached: the moment the user saves a key, lookups should work.
+      if (!apiKey) return { error: "no_key" };
       const res = await fetch(`${API}?target=${encodeURIComponent(domain)}&output=json`, {
-        headers: { Accept: "application/json" },
+        headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
         signal: AbortSignal.timeout(FETCH_TIMEOUT),
       });
+      if (res.status === 401 || res.status === 403) {
+        const entry = { error: "auth" };
+        await cacheSet(domain, entry);
+        return entry;
+      }
       if (res.status === 429) {
         const entry = { error: "rate_limited" };
         await cacheSet(domain, entry);
@@ -162,6 +170,10 @@ async function updateTab(tabId, url) {
   if (entry.error) {
     if (entry.error === "rate_limited") {
       setIcon(tabId, "!", "#c25555", `DR Lens — rate limited, retrying later (${domain})`);
+    } else if (entry.error === "no_key") {
+      setIcon(tabId, "!", "#e08a2e", "DR Lens — free Ahrefs API key needed, click for setup");
+    } else if (entry.error === "auth") {
+      setIcon(tabId, "!", "#e08a2e", "DR Lens — Ahrefs rejected the API key, check it in settings");
     } else {
       setIcon(tabId, "?", "#5a5f6e", `DR Lens — couldn't fetch DR for ${domain}`);
     }
@@ -206,8 +218,17 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (tab) updateTab(tab.id, tab.url);
 });
 
-// Popup asks for current data / force refresh
+// Popup asks for current data / force refresh; options page reports a key change
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg?.type === "keyChanged") {
+    // The options page already cleared the dr:* cache; redraw the visible
+    // tab of every window so stale "key needed" icons don't stick around.
+    chrome.tabs.query({ active: true }).then((tabs) => {
+      for (const tab of tabs) updateTab(tab.id, tab.url);
+    });
+    sendResponse({ ok: true });
+    return false;
+  }
   if (msg?.type !== "getDR" && msg?.type !== "refreshDR") return false;
   (async () => {
     if (msg.type === "getDR") {

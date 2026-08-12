@@ -25,7 +25,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding-right: 24px; /* keep clear of the info icon */
+    padding-right: 48px; /* keep clear of the gear + info icons */
   }
   .score-row {
     display: flex;
@@ -67,6 +67,34 @@
   .credit { font-size: 10px; color: #5a5f6e; }
   .credit a { color: #7b8194; text-decoration: none; }
   .state { margin-top: 10px; color: var(--muted); }
+  .setup {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    border-color: #7a5a24;
+    color: #e8b96a;
+  }
+  /* the display:block above would otherwise defeat the hidden attribute */
+  .setup[hidden] { display: none; }
+  .setup:hover { border-color: #a17730; }
+  .gear {
+    position: absolute;
+    top: 14px;
+    right: 40px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #3a3f52;
+    background: #2a2e3a;
+    color: var(--text);
+    font-size: 11px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .gear:hover { background: #3a3f52; border-color: #4a4f63; }
   .info {
     position: absolute;
     top: 14px;
@@ -107,6 +135,7 @@
 </style>
 </head>
 <body>
+  <button class="gear" id="settings" title="Settings" aria-label="Settings">&#9881;</button>
   <details class="info">
     <summary class="info-btn" title="About Domain Rating" aria-label="About Domain Rating">i</summary>
     <div class="info-pop">
@@ -121,6 +150,7 @@
   </div>
   <div class="bar"><div id="fill"></div></div>
   <div class="tier" id="tier"></div>
+  <button class="setup" id="setup" hidden>Set API key</button>
   <div class="row">
     <button id="refresh">Refresh</button>
     <span class="credit">data: <a href="https://ahrefs.com" target="_blank" rel="noopener noreferrer">Ahrefs</a></span>
